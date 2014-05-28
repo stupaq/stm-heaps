@@ -16,18 +16,16 @@ import ConcurrentHeap
 type TheHeap = CoarseHeap
 
 data CoarseHeap e = CoarseHeap {
-  heapCapacity :: Int
-, heapSize     :: TVar Int
+  heapSize     :: TVar Int
 , heapArr      :: TArray Int e
 }
 
 instance (Ord e) => ConcurrentHeap (CoarseHeap e) e where
   heapNew size =
-    liftM2 (CoarseHeap size) (newTVarIO 0) (atomically $ newArray_ (1, size))
+    liftM2 CoarseHeap (newTVarIO 0) (atomically $ newArray_ (1, size))
 
-  heapPut (CoarseHeap hcapacity hsize harr) elem = atomically $ do
+  heapPut (CoarseHeap hsize harr) elem = atomically $ do
     size <- (+1) <$> readTVar hsize
-    check $ size <= hcapacity
     writeTVar hsize size
     fixUp size elem
       where
@@ -41,7 +39,7 @@ instance (Ord e) => ConcurrentHeap (CoarseHeap e) e where
           then aput i px >> fixUp pi x
           else aput i x
 
-  heapPop (CoarseHeap _ hsize harr) = atomically $ do
+  heapPop (CoarseHeap hsize harr) = atomically $ do
     size <- (+(-1)) <$> readTVar hsize
     check $ size >= 0
     writeTVar hsize size

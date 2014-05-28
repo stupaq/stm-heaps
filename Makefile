@@ -1,4 +1,4 @@
-GHCOPTS		?= -O2 -rtsopts -threaded -W
+GHCOPTS		?= -O2 -rtsopts -threaded -W -Wall -fno-warn-unused-imports
 BINFILES	?= TestHeap
 
 all: $(BINFILES)

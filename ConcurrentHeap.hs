@@ -1,8 +1,11 @@
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE UndecidableInstances   #-}
 module ConcurrentHeap where
 
-import qualified Control.Exception (assert)
+import Control.Concurrent.STM
+import Control.Exception (assert)
 
 class (Ord e) => ConcurrentHeap h e | h -> e where
   heapNew :: Int -> IO h
@@ -11,6 +14,21 @@ class (Ord e) => ConcurrentHeap h e | h -> e where
   heapBuild :: Int -> [e] -> IO h
   heapBuild cap xs = do
     h <- heapNew cap
-    mapM_ (heapPut h) $ Control.Exception.assert (length xs <= cap) xs
+    mapM_ (heapPut h) $ assert (length xs <= cap) xs
     return h
+
+class (Ord e) => BoundedHeap h e | h -> e where
+  blockingPut :: h -> e -> IO ()
+  blockingPop :: h -> IO e
+
+data BoundedDecorator h = BoundedDecorator {
+  blockingHeap     :: h
+, blockingCapacity :: Int
+, blockingSize     :: TVar Int
+}
+
+instance (Ord e, ConcurrentHeap h e) => BoundedHeap (BoundedDecorator h) e where
+  --TODO
+  blockingPut = undefined
+  blockingPop = undefined
 

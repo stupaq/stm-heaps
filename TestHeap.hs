@@ -15,6 +15,7 @@ seed = 123
 capacity = 100000
 initSize = capacity `quot` 2
 
+readerThread, writerThread :: (ConcurrentHeap h a, Random a) => h -> Int -> IO ()
 readerThread heap num =
   replicateM_ num $ heapPop heap
 writerThread heap num = do
@@ -24,6 +25,7 @@ writerThread heap num = do
 spawnThreads :: (Int -> IO a) -> Int -> Int -> IO [Async a]
 spawnThreads thread work num = replicateM num (async $ thread $ work `quot` num)
 
+main :: IO ()
 main = do
   setStdGen $ mkStdGen seed
   Heap.testIt
