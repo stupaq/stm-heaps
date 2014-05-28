@@ -1,14 +1,15 @@
 {-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE TupleSections     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-module FineHeap where
+{-# LANGUAGE TupleSections         #-}
+module FineHeap (TheHeap, FineHeap, testIt) where
 
 import Control.Applicative
 import Control.Concurrent.STM
 import Control.Monad
-import Data.List
+import Data.List hiding (elem)
 import Data.Ord
-import Test.QuickCheck (Property, quickCheck)
+import Prelude hiding (elem)
+import Test.QuickCheck (Args (..), Property, quickCheckWith, stdArgs)
 import Test.QuickCheck.Monadic (monadicIO, run)
 import qualified Test.QuickCheck.Monadic (assert)
 
@@ -17,7 +18,7 @@ import ConcurrentHeap
 type TheHeap = FineHeap
 
 data FineHeap e = Nil | FineHeap {
-  heapSize :: TVar Int
+  heapSize  :: TVar Int
 , heapElem  :: TVar (Maybe e)
 , heapLeft  :: FineHeap e
 , heapRight :: FineHeap e
@@ -30,6 +31,7 @@ readNode Nil = return (0, Nothing)
 putElem :: (Ord e) => FineHeap e -> e -> STM (Maybe e)
 putElem root@(FineHeap size elem _ _) new = do
   (sz, el) <- readNode root
+  writeTVar size (sz + 1)
   case (sz, el) of
     (0, Nothing) -> do
       -- This is an empty node, we can put our stuff here and finish.
@@ -86,22 +88,26 @@ lowerGap root@(FineHeap _ elem left right) = do
         children <- mapM readNode [left, right]
         case children of
           -- In these cases we have no choice.
-          [(0, Nothing), (_, Just rel)] -> swapGap right rel
-          [(_, Just lel), (0, Nothing)] -> swapGap left lel
+          [(0, Nothing), (_, Just rel)] -> replaceGap right rel
+          [(_, Just lel), (0, Nothing)] -> replaceGap left lel
           -- Otherwise, we hold back if any of the nodes is a gap.
           [(_, Nothing), _] -> retry
           [_, (_, Nothing)] -> retry
           -- Finally, we swap with min child
           [(lsz, Just lel), (rsz, Just rel)] ->
             let (tree, el) = minimumBy (comparing snd) [(left, lel), (right, rel)]
-            in swapGap tree el
+            in replaceGap tree el
+      -- TODO prove it by hand
+      (_, Just _) ->
+        return Nothing
   case next of
     Nothing -> return ()
     Just tree -> lowerGap tree
     where
-      swapGap tree el = do
+      replaceGap tree@(FineHeap size' elem' _ _) el = do
         writeTVar elem $ Just el
-        writeTVar (heapElem tree) Nothing
+        writeTVar elem' Nothing
+        readTVar size' >>= writeTVar size' . subtract 1
         return $ Just tree
 
 instance (Ord e) => ConcurrentHeap (FineHeap e) e where
@@ -115,18 +121,14 @@ instance (Ord e) => ConcurrentHeap (FineHeap e) e where
     | otherwise = return Nil
 
   heapPut root@(FineHeap {}) new = do
-    putStrLn $ "put"
     next <- atomically $ putElem root new
     case next of
       Nothing -> return ()
       Just new' -> putElemRec root new'
-    putStrLn $ "put end"
 
   heapPop root@(FineHeap {}) = do
-    putStrLn $ "pop"
     el <- atomically $ putGap root
     lowerGap root
-    putStrLn $ "pop end"
     return el
 
 testSorting :: [Int] -> Property
@@ -139,5 +141,5 @@ testSorting xs = monadicIO $ do
   Test.QuickCheck.Monadic.assert $ sxs == sort xs
 
 testIt :: IO ()
-testIt = quickCheck testSorting
+testIt = quickCheckWith (stdArgs { maxSuccess = 10000 }) testSorting
 

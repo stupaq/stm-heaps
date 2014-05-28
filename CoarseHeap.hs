@@ -6,18 +6,21 @@ import Control.Applicative
 import Control.Concurrent.STM
 import Control.Monad
 import Data.Array.MArray
-import Data.List
+import Data.List hiding (elem)
 import Data.Ord
-import Test.QuickCheck (Property, quickCheck)
-import Test.QuickCheck.Monadic (assert, monadicIO, run)
+import Prelude hiding (elem)
+import Prelude hiding (elem)
+import Test.QuickCheck (Args (..), Property, quickCheckWith, stdArgs)
+import Test.QuickCheck.Monadic (monadicIO, run)
+import qualified Test.QuickCheck.Monadic (assert)
 
 import ConcurrentHeap
 
 type TheHeap = CoarseHeap
 
 data CoarseHeap e = CoarseHeap {
-  heapSize     :: TVar Int
-, heapArr      :: TArray Int e
+  heapSize :: TVar Int
+, heapArr  :: TArray Int e
 }
 
 instance (Ord e) => ConcurrentHeap (CoarseHeap e) e where
@@ -33,17 +36,16 @@ instance (Ord e) => ConcurrentHeap (CoarseHeap e) e where
         aput = writeArray harr
         fixUp 1 x = aput 1 x
         fixUp i x = do
-          let pi = i `quot` 2
-          px <- aget pi
-          if px > x
-          then aput i px >> fixUp pi x
+          let ai = i `quot` 2
+          ax <- aget ai
+          if ax > x
+          then aput i ax >> fixUp ai x
           else aput i x
 
   heapPop (CoarseHeap hsize harr) = atomically $ do
     size <- (+(-1)) <$> readTVar hsize
     check $ size >= 0
     writeTVar hsize size
-    return undefined
     x <- aget 1
     when (size > 0) $ aget (size + 1) >>= fixDown size 1
     return x
@@ -51,7 +53,7 @@ instance (Ord e) => ConcurrentHeap (CoarseHeap e) e where
         aget = readArray harr
         aput = writeArray harr
         fixDown n i x = do
-          children <- mapM (\i -> (,) i <$> aget i) $ filter (n >=) [2*i, 2*i+1]
+          children <- mapM (\j -> (,) j <$> aget j) $ filter (n >=) [2*i, 2*i+1]
           let (bi, bx) = minimumBy (comparing snd) $ (i, x):children
           if bx < x
           then aput i bx >> fixDown n bi x
@@ -64,7 +66,8 @@ testSorting xs = monadicIO $ do
     h <- heapNew l :: IO (CoarseHeap Int)
     mapM_ (heapPut h) xs
     replicateM l (heapPop h)
-  assert $ sxs == sort xs
+  Test.QuickCheck.Monadic.assert $ sxs == sort xs
 
-testIt = quickCheck testSorting
+testIt :: IO ()
+testIt = quickCheckWith (stdArgs { maxSuccess = 10000 }) testSorting
 
