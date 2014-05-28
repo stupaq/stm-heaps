@@ -97,8 +97,9 @@ lowerGap root@(FineHeap _ elem left right) = do
           [(lsz, Just lel), (rsz, Just rel)] ->
             let (tree, el) = minimumBy (comparing snd) [(left, lel), (right, rel)]
             in replaceGap tree el
-      -- TODO prove it by hand
       (_, Just _) ->
+        -- This can happen on one element queue, when someone overrides
+        -- empty queue left by us with an element.
         return Nothing
   case next of
     Nothing -> return ()

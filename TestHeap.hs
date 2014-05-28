@@ -8,9 +8,9 @@ import System.Random
 import System.TimeIt
 import Text.Printf (printf)
 
-import CoarseHeap as Heap
 import ConcurrentHeap
---import FineHeap as Heap
+--import CoarseHeap as Heap
+import FineHeap as Heap
 
 seed, capacity, initSize :: Int
 seed = 123
