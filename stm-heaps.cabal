@@ -1,0 +1,34 @@
+name:               stm-heaps
+version:            0.1.0.0
+-- synopsis:
+-- description:
+homepage:           https://github.com/stupaq/stm-heaps
+license:            GPL-3
+license-file:       LICENSE
+author:             Mateusz Machalica
+maintainer:         mateuszmachalica@gmail.com
+-- copyright:
+category:           Concurrency
+build-type:         Simple
+cabal-version:      >= 1.8
+
+executable TestCoarseHeap
+  build-depends:    base ==4.6.*, stm ==2.4.*, array ==0.4.*, QuickCheck ==2.6.*, async ==2.0.*, random ==1.0.*, timeit ==1.0.*
+  hs-source-dirs:   src
+  main-is:          TestHeap.hs
+  ghc-options:      -O2 -threaded -rtsopts -W -Wall -fno-warn-unused-imports
+  cpp-options:      -DHEAP_VERSION=CoarseHeap
+
+executable TestFineHeap
+  build-depends:    base ==4.6.*, stm ==2.4.*, array ==0.4.*, QuickCheck ==2.6.*, async ==2.0.*, random ==1.0.*, timeit ==1.0.*
+  hs-source-dirs:   src
+  main-is:          TestHeap.hs
+  ghc-options:      -O2 -threaded -rtsopts -W -Wall -fno-warn-unused-imports
+  cpp-options:      -DHEAP_VERSION=FineHeap
+
+executable TestSort
+  build-depends:    base ==4.6.*, stm ==2.4.*, array ==0.4.*, QuickCheck ==2.6.*, async ==2.0.*, random ==1.0.*, timeit ==1.0.*
+  hs-source-dirs:   src
+  main-is:          TestSort.hs
+  ghc-options:      -O2 -threaded -rtsopts -W -Wall -fno-warn-unused-imports
+
