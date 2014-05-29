@@ -1,0 +1,25 @@
+name:               STMHeaps
+version:            0.1.0.0
+build-type:         Simple
+cabal-version:      >= 1.8
+
+executable TestCoarseHeap
+  hs-source-dirs:   src
+  main-is:          TestHeap.hs
+  ghc-options:      -O2 -threaded -rtsopts -W -Wall -fno-warn-unused-imports
+  cpp-options:      -DHEAP_VERSION=CoarseHeap
+  build-depends:    base, timeit, QuickCheck, stm, array, random, async
+
+executable TestFineHeap
+  hs-source-dirs:   src
+  main-is:          TestHeap.hs
+  ghc-options:      -O2 -threaded -rtsopts -W -Wall -fno-warn-unused-imports
+  cpp-options:      -DHEAP_VERSION=FineHeap
+  build-depends:    base, timeit, QuickCheck, stm, array, random, async
+
+executable TestSort
+  hs-source-dirs:   src
+  main-is:          TestSort.hs
+  ghc-options:      -O2 -threaded -rtsopts -W -Wall -fno-warn-unused-imports
+  build-depends:    base, timeit, QuickCheck, stm, array, random, async
+

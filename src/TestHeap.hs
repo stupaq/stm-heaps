@@ -13,10 +13,6 @@ import ConcurrentHeap
 
 #ifdef HEAP_VERSION
 import HEAP_VERSION as Heap
-#else
---import CoarseHeap as Heap
---import FineHeapUnsafe as Heap
-import FineHeap as Heap
 #endif
 
 seed, capacity, initSize :: Int

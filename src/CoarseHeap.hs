@@ -1,3 +1,4 @@
+{-# LANGUAGE DoAndIfThenElse       #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 module CoarseHeap (TheHeap, CoarseHeap, testIt) where

@@ -1,3 +1,4 @@
+{-# LANGUAGE DoAndIfThenElse       #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TupleSections         #-}
