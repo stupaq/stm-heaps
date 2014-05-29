@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TupleSections         #-}
-module FineHeapUnsafe (TheHeap, FineHeapUnsafe, testIt) where
+module FineHeapUnsafe (TheHeap, FineHeapUnsafe, testIt, heapPopWithGap, heapUngap) where
 
 import Control.Applicative
 import Control.Concurrent.STM
@@ -61,8 +61,8 @@ heapPutElemRec (FineHeapUnsafe _ _ left right) new = do
     Nothing -> return ()
     Just (root', new') -> heapPutElemRec root' new'
 
-putGap :: FineHeapUnsafe e -> STM e
-putGap root@(FineHeapUnsafe size elem left right) = do
+heapPopWithGap :: FineHeapUnsafe e -> STM e
+heapPopWithGap root@(FineHeapUnsafe size elem left right) = do
   (sz, el) <- readNode root
   writeTVar size (sz - 1)
   check $ sz > 0
@@ -129,7 +129,7 @@ instance (Ord e) => ConcurrentHeap (FineHeapUnsafe e) e where
       Just new' -> heapPutElemRec root new'
 
   heapPop root@(FineHeapUnsafe {}) = do
-    el <- atomically $ putGap root
+    el <- atomically $ heapPopWithGap root
     heapUngap root
     return el
 
