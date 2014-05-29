@@ -4,7 +4,7 @@ BINFILES	?= TestHeap
 all: $(BINFILES)
 
 %: %.hs $(wildcard *.hs)
-	ghc $(GHCOPTS) -o $@ --make $<
+	ghc $(GHCOPTS) $(CPPFLAGS) -o $@ --make $<
 
 clean:
 	-rm -f *.hi *.o *~

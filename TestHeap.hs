@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 import Control.Applicative
@@ -9,8 +10,13 @@ import System.TimeIt
 import Text.Printf (printf)
 
 import ConcurrentHeap
+
+#ifdef HEAP_VERSION
+import HEAP_VERSION as Heap
+#else
 --import CoarseHeap as Heap
 import FineHeap as Heap
+#endif
 
 seed, capacity, initSize :: Int
 seed = 123
@@ -27,51 +33,48 @@ writerThread heap num = do
 spawnThreads :: (Int -> IO a) -> Int -> Int -> IO [Async a]
 spawnThreads thread work num = replicateM num (async $ thread $ work `quot` num)
 
+type Scenario = Int -> Heap.TheHeap Int -> IO ()
+runScenario :: Scenario -> IO ()
+runScenario sc = do
+  setStdGen $ mkStdGen seed
+  numCores <- getNumCapabilities
+  heap <- (heapBuild capacity <$> take initSize <$> randoms =<< newStdGen) :: IO (Heap.TheHeap Int)
+  sc numCores heap
+
 main :: IO ()
 main = do
   Heap.testIt
-  scenario1
-  scenario2
-  scenario3
-  scenario4
+  runScenario scenario1
+  runScenario scenario2
+  runScenario scenario3
+  runScenario scenario4
 
-scenario1, scenario2, scenario3, scenario4 :: IO ()
-scenario1 = do
-  setStdGen $ mkStdGen seed
-  numCores <- getNumCapabilities
+scenario1, scenario2, scenario3, scenario4 :: Scenario
+scenario1 numCores heap = do
   let numReaders = 1
   let numWriters = maximum [1, numCores - numReaders]
-  h <- (heapBuild capacity <$> take initSize <$> randoms =<< newStdGen) :: IO (Heap.TheHeap Int)
   (time, _) <- timeItT $ do
-    writers <- spawnThreads (writerThread h) initSize numWriters
-    readers <- spawnThreads (readerThread h) initSize numReaders
+    writers <- spawnThreads (writerThread heap) initSize numWriters
+    readers <- spawnThreads (readerThread heap) initSize numReaders
     mapM_ wait $ writers ++ readers
   printf "+++ OK, time %.2f s, %d cores %d writers %d readers\n" time numCores numWriters numReaders
 
-scenario2 = do
-  setStdGen $ mkStdGen seed
-  numWriters <- getNumCapabilities
-  h <- (heapBuild capacity <$> take initSize <$> randoms =<< newStdGen) :: IO (Heap.TheHeap Int)
+scenario2 numWriters heap = do
   (time, _) <- timeItT $ do
-    writers <- spawnThreads (writerThread h) initSize numWriters
+    writers <- spawnThreads (writerThread heap) initSize numWriters
     mapM_ wait writers
   printf "+++ OK, time %.2f s, %d writers\n" time numWriters
 
-scenario3 = do
-  setStdGen $ mkStdGen seed
-  numReaders <- getNumCapabilities
-  h <- (heapBuild capacity <$> take initSize <$> randoms =<< newStdGen) :: IO (Heap.TheHeap Int)
+scenario3 numReaders heap = do
   (time, _) <- timeItT $ do
-    readers <- spawnThreads (readerThread h) initSize numReaders
+    readers <- spawnThreads (readerThread heap) initSize numReaders
     mapM_ wait readers
   printf "+++ OK, time %.2f s, %d readers\n" time numReaders
 
-scenario4 = do
-  setStdGen $ mkStdGen seed
-  h <- (heapBuild capacity <$> take initSize <$> randoms =<< newStdGen) :: IO (Heap.TheHeap Int)
+scenario4 _ heap = do
   (time, _) <- timeItT $ do
-    writers <- spawnThreads (writerThread h) initSize 1
-    readers <- spawnThreads (readerThread h) initSize 1
+    writers <- spawnThreads (writerThread heap) initSize 1
+    readers <- spawnThreads (readerThread heap) initSize 1
     mapM_ wait $ writers ++ readers
   printf "+++ OK, time %.2f s, sequentially\n" time
 
