@@ -74,7 +74,8 @@ scenario3 numReaders heap = do
 scenario4 _ heap = do
   (time, _) <- timeItT $ do
     writers <- spawnThreads (writerThread heap) initSize 1
+    mapM_ wait writers
     readers <- spawnThreads (readerThread heap) initSize 1
-    mapM_ wait $ writers ++ readers
+    mapM_ wait readers
   printf "+++ OK, time %.2f s, sequentially\n" time
 
