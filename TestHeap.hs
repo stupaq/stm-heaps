@@ -20,7 +20,7 @@ import FineHeap as Heap
 
 seed, capacity, initSize :: Int
 seed = 123
-capacity = 200000
+capacity = 100000
 initSize = capacity `quot` 2
 
 readerThread, writerThread :: (ConcurrentHeap h a, Random a) => h -> Int -> IO ()
